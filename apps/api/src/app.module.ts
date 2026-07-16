@@ -9,6 +9,7 @@ import { HealthModule } from './health/health.module';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { validationSchema } from './config/validation.schema';
 import { PrismaModule } from './prisma/prisma.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { PrismaModule } from './prisma/prisma.module';
     }),
     PrismaModule,
     HealthModule,
+    AuthModule,
   ],
 })
 export class AppModule implements NestModule {

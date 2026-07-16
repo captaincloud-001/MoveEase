@@ -60,7 +60,7 @@ model User {
   lastName     String
   email        String      @unique
   phone        String      @unique
-  password     String
+  passwordHash     String
   profileImage String?
 
   role         Role        @default(CUSTOMER)
