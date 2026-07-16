@@ -1,0 +1,234 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+enum Role {
+  CUSTOMER
+  DRIVER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+enum RideStatus {
+  REQUESTED
+  ACCEPTED
+  ARRIVED
+  STARTED
+  COMPLETED
+  CANCELLED
+  EXPIRED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  UPI
+  WALLET
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+
+enum VehicleType {
+  BIKE
+  AUTO
+  CAR
+  SUV
+}
+
+model User {
+  id           String      @id @default(cuid())
+  firstName    String
+  lastName     String
+  email        String      @unique
+  phone        String      @unique
+  password     String
+  profileImage String?
+
+  role         Role        @default(CUSTOMER)
+  status       UserStatus  @default(ACTIVE)
+
+  isDeleted    Boolean     @default(false)
+  deletedAt    DateTime?
+
+  driverProfile DriverProfile?
+
+  bookings Booking[]
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model DriverProfile {
+  id              String   @id @default(cuid())
+
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  licenseNumber   String   @unique
+  licenseExpiry   DateTime
+
+  aadhaarNumber   String   @unique
+
+  isVerified      Boolean  @default(false)
+
+  rating          Decimal  @default(5.0) @db.Decimal(2,1)
+
+  totalTrips      Int      @default(0)
+
+
+  vehicles Vehicle[]
+  rides Ride[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Vehicle {
+  id              String   @id @default(cuid())
+
+  driverProfileId String
+  driverProfile   DriverProfile @relation(fields: [driverProfileId], references: [id], onDelete: Cascade)
+
+  type            VehicleType
+
+  brand           String
+  model           String
+  year            Int
+
+  plateNumber     String   @unique
+
+  color           String
+
+  passengerCapacity Int
+
+  isActive        Boolean  @default(true)
+
+  isVerified      Boolean  @default(false)
+  
+  rides Ride[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([driverProfileId])
+}
+
+model Ride {
+  id String @id @default(cuid())
+
+  // Driver & Vehicle
+  driverProfileId String?
+  driverProfile DriverProfile? @relation(fields: [driverProfileId], references: [id])
+
+  vehicleId String?
+  vehicle Vehicle? @relation(fields: [vehicleId], references: [id])
+
+  // Ride Status
+  status RideStatus @default(REQUESTED)
+  @@index([status])
+  @@index([driverProfileId])
+
+
+  // Pickup Location
+  pickupAddress String
+  pickupLatitude Float
+  pickupLongitude Float
+
+  // Drop Location
+  dropAddress String
+  dropLatitude Float
+  dropLongitude Float
+
+  // Distance
+  estimatedDistance Float?
+  actualDistance Float?
+
+  // Fare
+  estimatedFare Decimal @db.Decimal(10,2)
+  finalFare Decimal? @db.Decimal(10,2)
+  amount Decimal @db.Decimal(10,2)
+
+  // Timeline
+  requestedAt DateTime @default(now())
+  acceptedAt DateTime?
+  arrivedAt DateTime?
+  startedAt DateTime?
+  completedAt DateTime?
+  cancelledAt DateTime?
+  cancelledBy Role?  
+  cancellationReason String?
+  
+
+  //Payment
+  payment Payment?  
+
+
+  bookings Booking[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+
+}
+
+model Booking {
+  id String @id @default(cuid())
+
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  rideId String
+  ride Ride @relation(fields: [rideId], references: [id], onDelete: Cascade)
+
+  seats Int @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([rideId])
+  @@unique([userId, rideId])
+
+}
+
+
+model Payment {
+  id String @id @default(cuid())
+
+  rideId String @unique
+  ride Ride @relation(fields: [rideId], references: [id], onDelete: Cascade)
+
+  amount Decimal @db.Decimal(10,2)
+
+  method PaymentMethod
+
+  status PaymentStatus @default(PENDING)
+
+  transactionId String? @unique
+
+  paidAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
