@@ -116,5 +116,26 @@ async login(loginDto: LoginDto) {
     },
   };
  }
+async me(userId: string) {
+  const user = await this.prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+  });
+
+  if (!user) {
+    throw new UnauthorizedException('User not found');
+  }
+
+  return {
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+    createdAt: user.createdAt,
+  };
+}
 }
 
