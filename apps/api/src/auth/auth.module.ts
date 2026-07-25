@@ -16,7 +16,7 @@ import { AuthService } from './auth.service';
       inject: [ConfigService],
 
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_ACCESS_SECRET'),
+        secret: configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
 
         signOptions: {
           expiresIn: '15m',
@@ -32,6 +32,8 @@ import { AuthService } from './auth.service';
               JwtStrategy,
              ],
 
-  exports: [AuthService],
+  exports: [AuthService,
+            JwtModule,
+           ],
 })
 export class AuthModule {}

@@ -16,6 +16,35 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
   ) {}
+ 
+  private async generateTokens(
+    userId: string,
+    email: string,
+    role: string,
+  ) {
+    const payload = {
+      sub: userId,
+      email,
+      role,
+    };
+
+    const accessToken = await this.jwtService.signAsync(payload);
+
+    const refreshToken = await this.jwtService.signAsync(
+      payload,
+      {
+        secret: process.env.JWT_REFRESH_SECRET,
+        expiresIn: '7d',
+      },
+    );
+
+    return {
+      accessToken,
+      refreshToken,
+    };
+  }
+
+
 
   async register(registerDto: RegisterDto) {
 
@@ -96,17 +125,38 @@ async login(loginDto: LoginDto) {
     throw new UnauthorizedException('Invalid email or password');
   }
 
-  const payload = {
-    sub: user.id,
-    email: user.email,
-    role: user.role,
-  };
+  const {
+    accessToken,
+    refreshToken,
+  } = await this.generateTokens(
+    user.id,
+    user.email,
+    user.role,
+  );
 
-  const accessToken = await this.jwtService.signAsync(payload);
+
+  const refreshTokenHash = await bcrypt.hash(
+    refreshToken,
+    10,
+  );
+
+  await this.prisma.user.update({
+    where: {
+      id: user.id,
+    },
+    data: {
+      refreshTokenHash,
+    },
+  });
+
 
   return {
     message: 'Login successful',
+
     accessToken,
+
+    refreshToken,
+
     user: {
       id: user.id,
       firstName: user.firstName,
