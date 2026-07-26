@@ -1,3 +1,4 @@
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
@@ -166,6 +167,92 @@ async login(loginDto: LoginDto) {
     },
   };
  }
+
+async refresh(refreshTokenDto: RefreshTokenDto) {
+  const { refreshToken } = refreshTokenDto;
+
+  let payload: any;
+
+  try {
+    payload = await this.jwtService.verifyAsync(
+      refreshToken,
+      {
+        secret: process.env.JWT_REFRESH_SECRET,
+      },
+    );
+  } catch {
+    throw new UnauthorizedException(
+      'Invalid refresh token',
+    );
+  }
+
+  const user = await this.prisma.user.findUnique({
+    where: {
+      id: payload.sub,
+    },
+  });
+
+  if (
+    !user ||
+    !user.refreshTokenHash
+  ) {
+    throw new UnauthorizedException(
+      'Refresh token invalid',
+    );
+  }
+
+  const matches = await bcrypt.compare(
+    refreshToken,
+    user.refreshTokenHash,
+  );
+
+  if (!matches) {
+    throw new UnauthorizedException(
+      'Refresh token invalid',
+    );
+  }
+
+  const tokens = await this.generateTokens(
+    user.id,
+    user.email,
+    user.role,
+  );
+
+  const refreshTokenHash = await bcrypt.hash(
+    tokens.refreshToken,
+    10,
+  );
+
+  await this.prisma.user.update({
+    where: {
+      id: user.id,
+    },
+    data: {
+      refreshTokenHash,
+    },
+  });
+
+  return {
+    message: 'Tokens refreshed',
+    ...tokens,
+  };
+}
+
+async logout(userId: string) {
+  await this.prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      refreshTokenHash: null,
+    },
+  });
+
+  return {
+    message: 'Logged out successfully',
+  };
+}
+
 async me(userId: string) {
   const user = await this.prisma.user.findUnique({
     where: {

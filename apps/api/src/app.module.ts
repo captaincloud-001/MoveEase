@@ -10,6 +10,8 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { validationSchema } from './config/validation.schema';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
+import { DriverModule } from './driver/driver.module';
+import { VehicleModule } from './vehicle/vehicle.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { AuthModule } from './auth/auth.module';
     PrismaModule,
     HealthModule,
     AuthModule,
+    DriverModule,
+    VehicleModule,
   ],
 })
 export class AppModule implements NestModule {
