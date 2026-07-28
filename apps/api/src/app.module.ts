@@ -13,6 +13,7 @@ import { AuthModule } from './auth/auth.module';
 import { DriverModule } from './driver/driver.module';
 import { VehicleModule } from './vehicle/vehicle.module';
 import { RideModule } from './ride/ride.module';
+import { BookingModule } from './booking/booking.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { RideModule } from './ride/ride.module';
     DriverModule,
     VehicleModule,
     RideModule,
+    BookingModule,
   ],
 })
 export class AppModule implements NestModule {

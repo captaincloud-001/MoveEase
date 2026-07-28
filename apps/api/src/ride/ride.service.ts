@@ -100,19 +100,46 @@ export class RideService {
   }
   async getAvailableRides() {
   const rides = await this.prisma.ride.findMany({
-    where: {
-      status: 'REQUESTED',
+  where: {
+    status: 'REQUESTED',
+    vehicle: {
+      isActive: true,
+      isVerified: true,
+    },
+  },
 
-      vehicle: {
-        isActive: true,
-        isVerified: true,
+  select: {
+    id: true,
+
+    pickupAddress: true,
+    dropAddress: true,
+
+    pickupLatitude: true,
+    pickupLongitude: true,
+
+    dropLatitude: true,
+    dropLongitude: true,
+
+    estimatedDistance: true,
+    estimatedFare: true,
+
+    requestedAt: true,
+
+    vehicle: {
+      select: {
+        id: true,
+        type: true,
+        brand: true,
+        model: true,
+        color: true,
+        passengerCapacity: true,
       },
     },
 
-    include: {
-      vehicle: true,
-      driverProfile: {
-        include: {
+    driverProfile: {
+        select: {
+          rating: true,
+ 
           user: {
             select: {
               firstName: true,
@@ -127,10 +154,9 @@ export class RideService {
       requestedAt: 'desc',
     },
   });
-
     return {
-      message: 'Available rides fetched successfully',
-      rides,
-    };
-  }
+    message: 'Available rides fetched successfully',
+    rides,
+  };
+
 }
