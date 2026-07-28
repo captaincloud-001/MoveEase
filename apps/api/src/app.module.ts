@@ -12,6 +12,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { DriverModule } from './driver/driver.module';
 import { VehicleModule } from './vehicle/vehicle.module';
+import { RideModule } from './ride/ride.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { VehicleModule } from './vehicle/vehicle.module';
     AuthModule,
     DriverModule,
     VehicleModule,
+    RideModule,
   ],
 })
 export class AppModule implements NestModule {
