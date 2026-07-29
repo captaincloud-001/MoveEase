@@ -154,9 +154,9 @@ export class RideService {
       requestedAt: 'desc',
     },
   });
-    return {
+  return {
     message: 'Available rides fetched successfully',
     rides,
   };
-
+ }
 }
