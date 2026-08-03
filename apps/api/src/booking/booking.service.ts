@@ -9,6 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 
 import { BookingStatus } from '@prisma/client';
+import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
 
 @Injectable()
 export class BookingService {
@@ -177,6 +178,83 @@ async getPendingBookings(userId: string) {
   return {
     message: 'Pending bookings fetched successfully',
     bookings,
+  };
+}
+
+async updateBookingStatus(
+  bookingId: string,
+  userId: string,
+  dto: UpdateBookingStatusDto,
+) {
+  const driver =
+    await this.prisma.driverProfile.findUnique({
+      where: {
+        userId,
+      },
+    });
+
+  if (!driver) {
+    throw new NotFoundException(
+      'Driver profile not found',
+    );
+  }
+
+  const booking =
+    await this.prisma.booking.findUnique({
+      where: {
+        id: bookingId,
+      },
+      include: {
+        ride: true,
+      },
+    });
+
+  if (!booking) {
+    throw new NotFoundException(
+      'Booking not found',
+    );
+  }
+
+  if (
+    booking.ride.driverProfileId !== driver.id
+  ) {
+    throw new ForbiddenException(
+      'This booking is not for your ride',
+    );
+  }
+
+  if (
+    booking.status !== BookingStatus.PENDING
+  ) {
+    throw new BadRequestException(
+      'Booking already processed',
+    );
+  }
+
+  const updatedBooking =
+    await this.prisma.booking.update({
+   if (
+     dto.status !== BookingStatus.ACCEPTED &&
+     dto.status !== BookingStatus.REJECTED
+   ) {
+     throw new BadRequestException(
+       'Driver can only ACCEPT or REJECT bookings',
+     );
+    }
+
+
+      where: {
+        id: bookingId,
+      },
+      data: {
+        status: dto.status,
+      },
+    });
+
+  return {
+    message:
+      'Booking updated successfully',
+    booking: updatedBooking,
   };
 }
 

@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  Param,
+  Patch,  
   Post,
   Req,
   UseGuards,
@@ -11,7 +13,7 @@ import { Role } from '@prisma/client';
 
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
-
+import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
 
 
 import { BookingService } from './booking.service';
@@ -35,11 +37,28 @@ export class BookingController {
     );
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.DRIVER)
+  @Patch(':id/status')
+  updateBookingStatus(
+    @Param('id') bookingId: string,
+    @Req() req: any,
+    @Body() dto: UpdateBookingStatusDto,
+  ) {
+    return this.bookingService.updateBookingStatus(
+      bookingId,
+      req.user.sub,
+      dto,
+    );
+  }
 
 
 
 
-  @UseGuards(JwtAuthGuard)
+
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.CUSTOMER)
   @Post()
   createBooking(
     @Req() req: any,
