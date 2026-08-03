@@ -223,39 +223,36 @@ async updateBookingStatus(
     );
   }
 
-  if (
-    booking.status !== BookingStatus.PENDING
-  ) {
-    throw new BadRequestException(
-      'Booking already processed',
-    );
-  }
-
-  const updatedBooking =
-    await this.prisma.booking.update({
-   if (
-     dto.status !== BookingStatus.ACCEPTED &&
-     dto.status !== BookingStatus.REJECTED
-   ) {
-     throw new BadRequestException(
-       'Driver can only ACCEPT or REJECT bookings',
-     );
-    }
-
-
-      where: {
-        id: bookingId,
-      },
-      data: {
-        status: dto.status,
-      },
-    });
-
-  return {
-    message:
-      'Booking updated successfully',
-    booking: updatedBooking,
-  };
+if (
+  booking.status !== BookingStatus.PENDING
+) {
+  throw new BadRequestException(
+    'Booking already processed',
+  );
 }
 
+if (
+  dto.status !== BookingStatus.ACCEPTED &&
+  dto.status !== BookingStatus.REJECTED
+) {
+  throw new BadRequestException(
+    'Driver can only ACCEPT or REJECT bookings',
+  );
+}
+
+const updatedBooking =
+  await this.prisma.booking.update({
+    where: {
+      id: bookingId,
+    },
+    data: {
+      status: dto.status,
+    },
+  });
+
+return {
+  message: 'Booking updated successfully',
+  booking: updatedBooking,
+};
+}
 }
