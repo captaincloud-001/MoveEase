@@ -32,6 +32,13 @@ enum RideStatus {
   EXPIRED
 }
 
+enum BookingStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}
+
 enum PaymentMethod {
   CASH
   CARD
@@ -200,6 +207,8 @@ model Booking {
   ride Ride @relation(fields: [rideId], references: [id], onDelete: Cascade)
 
   seats Int @default(1)
+   
+  status BookingStatus @default(PENDING)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -8,6 +8,8 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 
+import { BookingStatus } from '@prisma/client';
+
 @Injectable()
 export class BookingService {
   constructor(
@@ -114,12 +116,68 @@ export class BookingService {
           userId,
           rideId: ride.id,
           seats: dto.seats,
+          status: BookingStatus.PENDING,
         },
       });
 
     return {
-      message: 'Ride booked successfully',
+      message: 'Booking request sent successfully',
       booking,
     };
   }
+
+async getPendingBookings(userId: string) {
+  const driver =
+    await this.prisma.driverProfile.findUnique({
+      where: {
+        userId,
+      },
+    });
+
+  if (!driver) {
+    throw new NotFoundException(
+      'Driver profile not found',
+    );
+  }
+
+  const bookings =
+    await this.prisma.booking.findMany({
+      where: {
+        status: BookingStatus.PENDING,
+
+        ride: {
+          driverProfileId: driver.id,
+        },
+      },
+
+      orderBy: {
+        createdAt: 'desc',
+      },
+
+      include: {
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+            phone: true,
+          },
+        },
+
+        ride: {
+          select: {
+            id: true,
+            pickupAddress: true,
+            dropAddress: true,
+            requestedAt: true,
+          },
+        },
+      },
+    });
+
+  return {
+    message: 'Pending bookings fetched successfully',
+    bookings,
+  };
+}
+
 }

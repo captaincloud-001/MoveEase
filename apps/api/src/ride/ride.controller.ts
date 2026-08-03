@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  Param,
+  Patch,
   Post,
   Req,
   UseGuards,
@@ -11,6 +13,7 @@ import { Role } from '@prisma/client';
 
 import { RideService } from './ride.service';
 import { CreateRideDto } from './dto/create-ride.dto';
+import { UpdateRideStatusDto } from './dto/update-ride-status.dto';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -36,6 +39,21 @@ export class RideController {
     @Body() dto: CreateRideDto,
   ) {
     return this.rideService.createRide(
+      req.user.sub,
+      dto,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.DRIVER)
+  @Patch(':id/status')
+  updateRideStatus(
+    @Param('id') rideId: string,
+    @Req() req: any,
+    @Body() dto: UpdateRideStatusDto,
+  ) {
+    return this.rideService.updateRideStatus(
+      rideId,
       req.user.sub,
       dto,
     );

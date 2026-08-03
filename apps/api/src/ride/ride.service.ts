@@ -6,6 +6,9 @@ import {
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRideDto } from './dto/create-ride.dto';
+import { UpdateRideStatusDto } from './dto/update-ride-status.dto';
+import { RideStatus } from '@prisma/client';
+
 
 @Injectable()
 export class RideService {
@@ -159,4 +162,114 @@ export class RideService {
     rides,
   };
  }
+
+  async updateRideStatus(
+  rideId: string,
+  userId: string,
+  dto: UpdateRideStatusDto,
+) {
+  const driver =
+    await this.prisma.driverProfile.findUnique({
+      where: {
+        userId,
+      },
+    });
+
+  if (!driver) {
+    throw new NotFoundException(
+      'Driver profile not found',
+    );
+  }
+
+  const ride =
+    await this.prisma.ride.findUnique({
+      where: {
+        id: rideId,
+      },
+    });
+
+  if (!ride) {
+    throw new NotFoundException(
+      'Ride not found',
+    );
+  }
+
+  if (ride.driverProfileId !== driver.id) {
+    throw new ForbiddenException(
+      'This ride does not belong to you',
+    );
+  }
+  
+  const allowedTransitions: Record<RideStatus, RideStatus[]> = {
+
+  REQUESTED: [RideStatus.ACCEPTED, RideStatus.CANCELLED],
+
+  ACCEPTED: [RideStatus.ARRIVED, RideStatus.CANCELLED],
+
+  ARRIVED: [RideStatus.STARTED, RideStatus.CANCELLED],
+
+  STARTED: [RideStatus.COMPLETED],
+
+  COMPLETED: [],
+
+  CANCELLED: [],
+
+  EXPIRED: [],
+};
+const currentStatus = ride.status;
+
+const nextStatus = dto.status;
+
+if (
+  !allowedTransitions[currentStatus].includes(
+    nextStatus,
+  )
+) {
+  throw new ForbiddenException(
+    `Cannot change ride from ${currentStatus} to ${nextStatus}`,
+  );
+}
+
+
+
+  const updatedRide =
+    await this.prisma.ride.update({
+      where: {
+        id: rideId,
+      },
+      data: {
+        status: dto.status,
+
+        acceptedAt:
+          dto.status === 'ACCEPTED'
+            ? new Date()
+            : ride.acceptedAt,
+
+        arrivedAt:
+          dto.status === 'ARRIVED'
+            ? new Date()
+            : ride.arrivedAt,
+
+        startedAt:
+          dto.status === 'STARTED'
+            ? new Date()
+            : ride.startedAt,
+
+        completedAt:
+          dto.status === 'COMPLETED'
+            ? new Date()
+            : ride.completedAt,
+
+        cancelledAt:
+          dto.status === 'CANCELLED'
+            ? new Date()
+            : ride.cancelledAt,
+      },
+    });
+
+  return {
+    message: 'Ride status updated successfully',
+    ride: updatedRide,
+  };
+}
 }
